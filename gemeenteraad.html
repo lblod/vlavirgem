@@ -171,7 +171,7 @@
     }
 
     function getDate (date) {
-      return typeof date === 'object' ? lookup[date['@id']]['@value'] : date
+      return typeof date === 'object' ? date['@value'] || lookup[date['@id']]['@value'] || date['@value'] : date
     }
     </script>
   </body>
