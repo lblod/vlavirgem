@@ -29,11 +29,8 @@
 
     <div class="container">
       <!-- Example row of columns -->
-      <div class="row">
-        <div class="col-md-4">
-          <h2>Veronique Volders</h2>
-          <p>Werd verkozen tot gemeenteraadslid op ...</p>
-        </div>
+      <div id="list">
+        <p>Gemeenteraadsleden worden opgehaald...</p>
       </div>
 
       <hr>
@@ -48,5 +45,134 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="jsonld.min.js"></script>
+    <script type="text/javascript">
+    if (!Array.prototype.find) {
+      Array.prototype.find = function(predicate) {
+        if (this === null) {
+          throw new TypeError('Array.prototype.find called on null or undefined');
+        }
+        if (typeof predicate !== 'function') {
+          throw new TypeError('predicate must be a function');
+        }
+        var list = Object(this);
+        var length = list.length >>> 0;
+        var thisArg = arguments[1];
+        var value;
+
+        for (var i = 0; i < length; i++) {
+          value = list[i];
+          if (predicate.call(thisArg, value, i, list)) {
+            return value;
+          }
+        }
+        return undefined;
+      };
+    }
+    if (!Array.prototype.findIndex) {
+      Array.prototype.findIndex = function(predicate) {
+        if (this === null) {
+          throw new TypeError('Array.prototype.findIndex called on null or undefined');
+        }
+        if (typeof predicate !== 'function') {
+          throw new TypeError('predicate must be a function');
+        }
+        var list = Object(this);
+        var length = list.length >>> 0;
+        var thisArg = arguments[1];
+        var value;
+
+        for (var i = 0; i < length; i++) {
+          value = list[i];
+          if (predicate.call(thisArg, value, i, list)) {
+            return i;
+          }
+        }
+        return -1;
+      };
+    }
+    </script>
+    <script type="text/javascript">
+    var fragments, lookup;
+    var today = Date.now()
+    $(function () {
+      var context = {
+        "dcterms": "http://purl.org/dc/terms/",
+        "editor": "http://lblod.github.io/editor/assets/editor.json#",
+        "foaf": "http://xmlns.com/foaf/0.1/",
+        "hydra": "http://www.w3.org/ns/hydra/core#",
+        "lbld": "http://decisions.data.vlaanderen.be/ns#",
+        "mandaat": "http://mandates.data.vlaanderen.be/ns#",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "schema": "http://schema.org/",
+        "skos": "http://www.w3.org/2004/02/skos/core#",
+        "void": "http://rdfs.org/ns/void#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#"
+      }
+      $.getJSON('http://linkeddatatestagiv.cloudapp.net/poc/decisions.json').success(function(data) {
+        jsonld.compact(data, context, compactCallback)
+      })
+    })
+    function compactCallback (err, data) {
+      if (!data['@graph']) {
+        return console.warn('nothing to see')
+      }
+      fragments = data['@graph']
+      lookup = {}
+      for (var i = fragments.length - 1; i >= 0; i--) {
+        lookup[fragments[i]['@id']] = fragments[i]
+      }
+      var mandates = extractMandates()
+      toList(mandates)
+    }
+
+    function toList (mandates) {
+      var html = ''
+      for (var i = 0; i < mandates.length; i++) {
+        html += '<h2>' + mandates[i].person['schema:name'] + '</h2>'
+        let date = getDate(mandates[i]['schema:startDate'])
+        if (date) {
+          html += '<p>Werd verkozen tot gemeenteraadslid op ' + date + '</p>'
+        }
+      }
+      $('#list').html(html)
+    }
+
+    function extractMandates () {
+      return fragments.filter(function (f) {
+        // Look only at decisions
+        return f['@type'] === 'lbld:Decision'
+      }).filter(function (d) {
+        // Filter by date
+        d.zit = lookup[d['schema:event']['@id']]
+        d.date = d.zit && Date.parse(getDate(d.zit['schema:startDate'])) || 0
+        return d.date < today
+      }).sort(function (a, b) {
+        // Sort by date
+        return a.date - b.date
+      }).reduce(function (output, b) {
+        // Add created mandates
+        if (b['lbld:creates']) {
+          output.push(b['lbld:creates'])
+        }
+        if (b['lbld:replaces']) {
+          let man = output.findIndex(function(m) { return m.id === b['lbld:replaces']['@id'] })
+          if (man >= 0) {
+            output[man] = b['lbld:replaces']
+          }
+        }
+        return output
+      }, []).map(function (m) {
+        var man = lookup[m['@id']]
+        man.person = lookup[man['mandaat:person']['@id']]
+        return man
+      })
+    }
+
+    function getDate (date) {
+      return typeof date === 'object' ? lookup[date['@id']]['@value'] : date
+    }
+    </script>
   </body>
 </html>
