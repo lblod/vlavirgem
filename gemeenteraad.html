@@ -143,6 +143,7 @@
       var context = {
         "dcterms": "http://purl.org/dc/terms/",
         "editor": "http://lblod.github.io/editor/assets/editor.json#",
+        "people": "http://lblod.github.io/editor/assets/people.json#",
         "foaf": "http://xmlns.com/foaf/0.1/",
         "hydra": "http://www.w3.org/ns/hydra/core#",
         "lbld": "http://decisions.data.vlaanderen.be/ns#",
@@ -154,7 +155,7 @@
         "void": "http://rdfs.org/ns/void#",
         "xsd": "http://www.w3.org/2001/XMLSchema#"
       }
-      $.getJSON('http://linkeddatatestagiv.cloudapp.net/poc/decisions.json').success(function(data) {
+      $.getJSON('http://linkeddatatestagiv.cloudapp.net/poc/decisions.jsonld?limit=100000').success(function(data) {
         jsonld.compact(data, context, compactCallback)
       })
     })
@@ -173,7 +174,6 @@
 
     function setMonth (month) {
       today = new Date(Date.UTC(2013, month, 1))
-      console.log(today.toJSON())
       var mandates = extractMandates()
       toList(mandates)
     }
@@ -211,10 +211,12 @@
           b['lbld:creates'].decision = b
           output.push(b['lbld:creates'])
         }
-        if (b['lbld:replaces']) {
-          let man = output.findIndex(function(m) { return m.id === b['lbld:replaces']['@id'] })
+        if (b['lbld:changes']) {
+          let man = output.findIndex(function(m) { return m['@id'] === b['lbld:changes']['@id'] })
           if (man >= 0) {
-            output[man] = b['lbld:replaces']
+            console.log(b)
+            b['lbld:changes']['schema:startDate'] = output[man]['startDate']
+            output[man] = b['lbld:changes']
             output[man].decision = b
           }
         }
@@ -224,6 +226,8 @@
         man.person = lookup[man['mandaat:person']['@id']]
         man.decision = m.decision
         return man
+      }).filter(function (man) {
+        return man['schema:endDate'] ? Date.parse(getDate(man['schema:endDate'])) > today : true
       })
     }
 
