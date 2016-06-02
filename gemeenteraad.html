@@ -214,10 +214,7 @@
         if (b['lbld:changes']) {
           let man = output.findIndex(function(m) { return m['@id'] === b['lbld:changes']['@id'] })
           if (man >= 0) {
-            console.log(b)
-            b['lbld:changes']['schema:startDate'] = output[man]['startDate']
-            output[man] = b['lbld:changes']
-            output[man].decision = b
+            output[man]['schema:endDate'] = b['lbld:changes']['schema:endDate']
           }
         }
         return output
