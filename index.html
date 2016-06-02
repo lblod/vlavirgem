@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="dct: http://purl.org/dc/terms/ schema: http://schema.org/ lbld: http://decisions.data.vlaanderen.be/ns# dcat: http://www.w3.org/ns/dcat#">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,37 +16,116 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
   </head>
-  <body>
-
-    <!-- Main jumbotron for a primary marketing message or call to action -->
-    <div class="jumbotron">
+  <body  >
+    <div class="navbar-wrapper">
       <div class="container">
-        <h1>Vlaamse Virtuele Gemeente</h1>
-        <p>Deze webstek maakt deel uit van het project LBLOD.</p>
-        <p><a class="btn btn-primary btn-lg" href="http://lokaalbestuur.vlaanderen.be/lokale-besluiten-als-gelinkte-open-data" role="button">Learn more &raquo;</a></p>
+        <nav class="navbar navbar-inverse navbar-static-top">
+          <div class="container">
+            <div class="navbar-header">
+              <a class="navbar-brand" href="#">Vlavirgem</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                <li class="active"><a href="#">De Gemeente</a></li>
+                <li class="dropdown">
+                  <a href="#gemeenteraad" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Gemeenteraad <span class="caret"></span></a>
+                  <ul class="dropdown-menu">
+                    <li><a href="gemeenteraad.html">Samenstelling in de tijd</a></li>
+                    <li><a href="#besluiten">Genomen besluiten</a></li>
+                  </ul>
+                </li>
+                <li><a href="http://linkeddatatestagiv.cloudapp.net/poc/decisions" target="_blank">Bron (RDF)</a></li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+        <div class="container marketing">
+          <div class="row">
+            
+            <div class="col-lg-1">
+            </div>
+            <div class="col-lg-10">
+              <h1 id="logo">
+                <img src="img/vlavirgem.png" width="50%"></img>
+              </h1>
+              <p>Welkom op de website van de Vlaamse Virtuele Gemeente. Deze pagina maakt deel uit van het project LBLOD, een proof of concept om lokale besluiten te ontsluiten als gelinkte open data.&nbsp;<a href="http://lokaalbestuur.vlaanderen.be/lokale-besluiten-als-gelinkte-open-data" role="button">Learn more &raquo;</a></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="container">
+          <!-- Example row of columns -->
+          <div class="row">
+            
+            <div class="col-lg-1">
+            </div>
+            <div class="col-md-10" id="gemeenteraad" resource="http://vlavirgem.pieter.pm/#" typeof="schema:Organization">
+              <h2 property="dct:title">De gemeenteraad</h2>
+              <p>Bekijk de <a href="gemeenteraad.html">Samenstelling van de gemeenteraad over de tijd</a></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-1">
+            </div>
+            <div class="col-md-10" id="besluiten">
+              <h2>Overzicht van de besluiten</h2>
+              <div>
+                <ul id="list" class="list-group"></ul>
+              </div>
+              <p></p>
+            </div>
+          </div>
+        </div> <!-- /container -->
+        <hr>
+          
+        <footer>
+          <p>&copy; 2016 Vlavirgem.</p>
+        </footer>
       </div>
     </div>
-
-    <div class="container">
-      <!-- Example row of columns -->
-      <div class="row">
-        <div class="col-md-4">
-          <h2>De gemeenteraad</h2>
-          <p>Bekijk de <a href="gemeenteraad.html">Gemeenteraad</a></p>
-        </div>
-      </div>
-
-      <hr>
-
-      <footer>
-        <p>&copy; 2016 Vlavirgem.</p>
-      </footer>
-    </div> <!-- /container -->
-
-
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="jsonld.min.js"></script>
+    <script>
+    function fetchDecisions (compactCallback) {
+      var frame = {
+        "@context" : { "dcterms": "http://purl.org/dc/terms/",
+          "editor": "http://lblod.github.io/editor/assets/editor.json#",
+          "people": "http://lblod.github.io/editor/assets/people.json#",
+          "foaf": "http://xmlns.com/foaf/0.1/",
+          "hydra": "http://www.w3.org/ns/hydra/core#",
+          "lbld": "http://decisions.data.vlaanderen.be/ns#",
+          "mandaat": "http://mandates.data.vlaanderen.be/ns#",
+          "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+          "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+          "schema": "http://schema.org/",
+          "skos": "http://www.w3.org/2004/02/skos/core#",
+          "void": "http://rdfs.org/ns/void#",
+          "xsd": "http://www.w3.org/2001/XMLSchema#"
+        },
+        "@graph" : [
+          { "@type": "lbld:Decision", "schema:event" : { "lbld:organization" : "http://vlavirgem.pieter.pm/#gemeenteraad" } } 
+        ]
+      }
+      $.getJSON('http://linkeddatatestagiv.cloudapp.net/poc/decisions.jsonld?limit=100000').success(function(data) {
+        jsonld.frame(data, frame, compactCallback)
+      })
+    };
+    
+    fetchDecisions(function (error, decisions) {
+      console.log(decisions);
+      var html = '';
+      for (var i = 0; i < decisions["@graph"].length; i++) {
+        var bbc = '';
+        if (decisions["@graph"][i]["lbld:bbcCode"]) {
+            bbc = '<span class="badge">' + decisions["@graph"][i]["lbld:bbcCode"] + '</span>';
+        }
+        html += '<li class="list-group-item"><a href="' + decisions["@graph"][i]["@id"] + '" target="_blank">' + decisions["@graph"][i]["dcterms:title"] + '</a> ' + bbc + '</li>';
+      }
+      $('#list').html(html);
+    });
+    </script>
   </body>
 </html>
