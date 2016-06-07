@@ -118,6 +118,10 @@
       console.log(decisions);
       var html = '';
       for (var i = 0; i < decisions["@graph"].length; i++) {
+        var evt = decisions['@graph'][i]['schema:event']
+        if (evt&&evt['lbld:organization']&&evt['lbld:organization']['@id'] !== 'http://vlavirgem.pieter.pm/#gemeenteraad') {
+          continue
+        }
         var bbc = '';
         if (decisions["@graph"][i]["lbld:bbcCode"]) {
             bbc = '<span class="badge">' + decisions["@graph"][i]["lbld:bbcCode"] + '</span>';
