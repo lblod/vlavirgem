@@ -230,7 +230,10 @@
         // Filter by date
         d.zit = lookup[d['schema:event']['@id']]
         d.date = d.zit && Date.parse(getDate(d.zit['schema:startDate'])) || 0
-        return d.date < today
+        return d.date < today 
+      }).filter(function (d) {
+        console.log(d);
+        return d.zit['lbld:organization']['@id'] === 'http://vlavirgem.pieter.pm/#gemeenteraad'
       }).sort(function (a, b) {
         // Sort by date
         return a.date - b.date
